@@ -1,187 +1,126 @@
 <!DOCTYPE html>
 <html lang="vi">
 <head>
-  <meta charset="UTF-8">
-  <title>Danh sách nhiệm vụ</title>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Todo Countdown</title>
   <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
     body {
-      font-family: 'Segoe UI', sans-serif;
-      background-image: url('jiminjeongcross.png');
+      text-align: center;
+      background-image: url("background.jpg");
       background-size: cover;
-      background-position: center;
-      background-attachment: fixed;
-      min-height: 100vh;
+      font-family: Arial;
       color: white;
     }
-
-    h1 {
-      text-align: center;
-      margin-top: 40px;
-      font-size: 2.5em;
-      text-shadow: 2px 2px 5px #000;
-    }
-
-    .container {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      margin-top: 30px;
-    }
-
     input, button {
-      padding: 12px;
-      margin: 8px;
-      border-radius: 8px;
-      border: none;
-      font-size: 16px;
-      outline: none;
+      margin: 5px;
+      padding: 10px;
+      border-radius: 5px;
     }
-
-    input[type="text"] {
+    .task {
+      background: rgba(0, 0, 0, 0.5);
+      margin: 10px auto;
+      padding: 10px;
+      border-radius: 10px;
       width: 300px;
     }
-
-    input[type="number"] {
-      width: 100px;
-    }
-
-    button {
-      background-color: #00c3ff;
-      color: white;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #008bb3;
-    }
-
-    ul {
-      list-style-type: none;
-      padding: 0;
-      margin-top: 30px;
-    }
-
-    li {
-      background-color: rgba(0, 0, 0, 0.6);
-      margin: 10px auto;
-      padding: 15px;
-      width: 60%;
-      border-radius: 10px;
-      font-size: 18px;
-      position: relative;
-    }
-
-    .delete-btn {
-      position: absolute;
-      right: 15px;
-      top: 15px;
-      background-color: #e74c3c;
-      padding: 5px 10px;
-      font-size: 12px;
-      border: none;
-      border-radius: 4px;
-      cursor: pointer;
-    }
-
-    .delete-btn:hover {
-      background-color: #c0392b;
-    }
-
-    .countdown {
-      color: #ffcc00;
-      font-weight: bold;
-      margin-top: 6px;
+    .task button {
+      margin: 3px;
     }
   </style>
 </head>
 <body>
-
   <h1>Danh sách nhiệm vụ</h1>
+  <input type="text" id="taskName" placeholder="Nhập nhiệm vụ...">
+  <input type="number" id="hours" placeholder="giờ" min="0">
+  <input type="number" id="minutes" placeholder="phút" min="0" max="59">
+  <input type="number" id="seconds" placeholder="giây" min="0" max="59">
+  <br>
+  <button onclick="addTask()">Thêm nhiệm vụ</button>
 
-  <div class="container">
-    <input type="text" id="taskInput" placeholder="Nhập nhiệm vụ...">
-    <input type="number" id="timeInput" placeholder="phút" min="1">
-    <br>
-    <button onclick="addTask()">Thêm nhiệm vụ</button>
-  </div>
-
-  <ul id="taskList"></ul>
+  <div id="taskList"></div>
 
   <script>
-    let tasks = [];
+    function formatTime(s) {
+      const h = String(Math.floor(s / 3600)).padStart(2, '0');
+      const m = String(Math.floor((s % 3600) / 60)).padStart(2, '0');
+      const sec = String(s % 60).padStart(2, '0');
+      return `${h}:${m}:${sec}`;
+    }
 
     function addTask() {
-      const taskInput = document.getElementById("taskInput");
-      const timeInput = document.getElementById("timeInput");
+      const name = document.getElementById("taskName").value;
+      const h = parseInt(document.getElementById("hours").value || "0");
+      const m = parseInt(document.getElementById("minutes").value || "0");
+      const s = parseInt(document.getElementById("seconds").value || "0");
+      const totalSeconds = h * 3600 + m * 60 + s;
 
-      const text = taskInput.value.trim();
-      const minutes = parseInt(timeInput.value);
+      if (!name || totalSeconds <= 0) {
+        alert("Vui lòng nhập tên và thời gian hợp lệ!");
+        return;
+      }
 
-      if (text === "" || isNaN(minutes) || minutes <= 0) return;
+      const taskDiv = document.createElement("div");
+      taskDiv.className = "task";
 
-      const id = "task-" + Date.now();
-      const task = {
-        id,
-        text,
-        remaining: minutes * 60
+      const display = document.createElement("div");
+      display.textContent = `${name} - ${formatTime(totalSeconds)}`;
+      taskDiv.appendChild(display);
+
+      let interval = null;
+      let currentSeconds = totalSeconds;
+
+      const countdownDisplay = document.createElement("div");
+      countdownDisplay.style.fontSize = "20px";
+      countdownDisplay.style.margin = "10px 0";
+      countdownDisplay.textContent = "Chưa bắt đầu";
+      taskDiv.appendChild(countdownDisplay);
+
+      const startBtn = document.createElement("button");
+      startBtn.textContent = "Bắt đầu";
+      startBtn.onclick = () => {
+        if (interval) return;
+        countdownDisplay.textContent = formatTime(currentSeconds);
+        interval = setInterval(() => {
+          if (currentSeconds > 0) {
+            currentSeconds--;
+            countdownDisplay.textContent = formatTime(currentSeconds);
+          } else {
+            clearInterval(interval);
+            interval = null;
+            countdownDisplay.textContent = "Hoàn thành!";
+          }
+        }, 1000);
       };
 
-      tasks.push(task);
-      renderTask(task);
-      taskInput.value = "";
-      timeInput.value = "";
+      const stopBtn = document.createElement("button");
+      stopBtn.textContent = "Dừng";
+      stopBtn.onclick = () => {
+        clearInterval(interval);
+        interval = null;
+      };
 
-      startCountdown(task);
-    }
+      const deleteBtn = document.createElement("button");
+      deleteBtn.textContent = "Xóa";
+      deleteBtn.style.backgroundColor = "red";
+      deleteBtn.style.color = "white";
+      deleteBtn.onclick = () => {
+        clearInterval(interval);
+        taskDiv.remove();
+      };
 
-    function renderTask(task) {
-      const ul = document.getElementById("taskList");
-      const li = document.createElement("li");
-      li.id = task.id;
+      taskDiv.appendChild(startBtn);
+      taskDiv.appendChild(stopBtn);
+      taskDiv.appendChild(deleteBtn);
 
-      li.innerHTML = `
-        ${task.text}
-        <div class="countdown" id="countdown-${task.id}">${formatTime(task.remaining)}</div>
-        <button class="delete-btn" onclick="deleteTask('${task.id}')">Xóa</button>
-      `;
+      document.getElementById("taskList").appendChild(taskDiv);
 
-      ul.appendChild(li);
-    }
-
-    function startCountdown(task) {
-      const interval = setInterval(() => {
-        task.remaining -= 1;
-        const display = document.getElementById(`countdown-${task.id}`);
-        if (display) {
-          display.innerText = formatTime(task.remaining);
-        }
-
-        if (task.remaining <= 0) {
-          clearInterval(interval);
-          alert(`Hết giờ cho: ${task.text}`);
-          deleteTask(task.id);
-        }
-      }, 1000);
-    }
-
-    function formatTime(seconds) {
-      const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-      const s = (seconds % 60).toString().padStart(2, '0');
-      return `${m}:${s}`;
-    }
-
-    function deleteTask(id) {
-      tasks = tasks.filter(t => t.id !== id);
-      const li = document.getElementById(id);
-      if (li) li.remove();
+      // Clear inputs
+      document.getElementById("taskName").value = "";
+      document.getElementById("hours").value = "";
+      document.getElementById("minutes").value = "";
+      document.getElementById("seconds").value = "";
     }
   </script>
-
 </body>
 </html>
